@@ -16,7 +16,7 @@ A production-oriented full-stack feature implementing the **Feedants Competition
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React Native (Expo SDK 52 / 57), TypeScript, React Navigation, Expo Vector Icons, Expo Clipboard
+- **Frontend:** React Native (Expo SDK 57), TypeScript, React Navigation, Expo Vector Icons, Expo Clipboard
 - **Backend:** Node.js, Express.js, TypeScript, Mongoose (MongoDB ODM), Zod Validation, Express Rate Limit, Helmet, CORS
 - **Database:** MongoDB / Mongoose with `MongoMemoryReplSet` automatic fallback for zero-dependency local transaction testing
 - **Testing:** Node Native Test Runner (`node:test`), TypeScript (`tsc`)
@@ -254,7 +254,7 @@ cd server
 npm test
 ```
 
-- Executed 18 test cases across 6 suites verifying GET APIs, registration errors, duplicate submission restrictions, and **10 concurrent registration requests competing for 1 spot**.
+- Executed 21 test cases across 7 suites verifying GET APIs, registration errors, duplicate submission restrictions, transaction rollbacks, and **10 concurrent registration requests competing for 1 spot**.
 
 ### Run Frontend State Unit Tests & Type Checks
 ```bash
