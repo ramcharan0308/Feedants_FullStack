@@ -4,13 +4,21 @@ A production-oriented full-stack feature implementing the **Feedants Competition
 
 ---
 
+## 🎥 Demo Video
+
+[Watch the Feedants Competition Details Demo](https://drive.google.com/file/d/1nbsMpfuHXUfj4PCUSKwLsO0aYkgd9hNe/view?usp=sharing)
+
+---
+
 ## 🌟 Overview & Highlights
 
 - **Visual Fidelity:** Built directly from the official Feedants assignment specification (`Feedants_Full_Stack_Development_Internship_Technical_Assignment.pdf`) and design reference (`Objective_Page.png`).
 - **Zero Static Mockup Data:** Every piece of information rendered on the frontend — title, entry fee, prize pool, remaining spots, judge credentials, dates, rewards, winners, and user registration state — is served dynamically via Express.js REST APIs connected to MongoDB.
+- **Deterministic Auto-Seeding:** On server startup (`npm run dev`), the database is automatically seeded with deterministic demo identifiers (`Competition ID: 6ab8ffc731f29eaaf5047daa`, `User ID: 6ab8ffc731f29eaaf5047da8`).
+- **Zero-Dependency MongoMemoryReplSet Fallback:** If standalone MongoDB at `127.0.0.1:27017` is unavailable, the server automatically launches `MongoMemoryReplSet` in memory for local development and ACID multi-document transaction support.
 - **Race Condition Prevention:** Implements atomic MongoDB operations (`findOneAndUpdate` with `$inc` and `$lt` capacity conditions) wrapped in ACID multi-document transactions to strictly guarantee `bookedSpots <= totalSpots` under high concurrent user load.
 - **Server-Time Driven Lifecycle Engine:** Solves device clock tampering by evaluating competition states (`UPCOMING`, `REGISTRATION_OPEN`, `REGISTRATION_CLOSED`, `SUBMISSION_OPEN`, `UNDER_JUDGING`, `COMPLETED`, `SOLD_OUT`) strictly on the backend.
-- **Cross-Platform React Native App:** Built with Expo, React Navigation, Safe Area handling, and responsive layout styling.
+- **Cross-Platform React Native App:** Built with Expo (SDK 57), React Navigation, Safe Area handling, interactive navigation screens (Home, Explore, Create, Competitions, Profile), language toggle (ENG | हिंदी), video modals, and responsive layout styling.
 
 ---
 
@@ -40,7 +48,7 @@ Feedants_FullStack/
 │   │   ├── constants/                    # Theme design tokens, API config, Demo identifiers
 │   │   ├── hooks/                        # useCompetitionDetails, useCountdown
 │   │   ├── navigation/                   # RootNavigator (React Navigation Stack)
-│   │   ├── screens/                      # CompetitionDetailsScreen container
+│   │   ├── screens/                      # CompetitionDetailsScreen, HomeScreen, ExploreScreen, CreateScreen, ProfileScreen
 │   │   ├── services/                     # apiClient, competitionService
 │   │   ├── types/                        # TypeScript API and domain contracts
 │   │   └── utils/                        # Formatters (currency, dates, timer), ctaStateResolver
@@ -52,7 +60,7 @@ Feedants_FullStack/
 │   ├── src/
 │   │   ├── config/                       # Environment configuration, database connection handler
 │   │   ├── controllers/                  # competitionController
-│   │   ├── database/                     # seed.ts (Idempotent seed script)
+│   │   ├── database/                     # seed.ts (Idempotent seed script with deterministic ObjectIds)
 │   │   ├── middlewares/                  # userContext, errorHandler, validateRequest, rateLimiter
 │   │   ├── models/                       # Mongoose Schemas (Competition, User, Judge, Registration, Winner, Submission)
 │   │   ├── routes/                       # healthRoutes, competitionRoutes
@@ -78,10 +86,13 @@ PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/feedants_competition
 NODE_ENV=development
 CLIENT_ORIGIN=http://localhost:8081
-DEMO_DATE_OFFSET_DAYS=0
+DEMO_DATE_OFFSET_DAYS=7
 ```
 
-- `DEMO_DATE_OFFSET_DAYS`: When set to a positive number (e.g., `5`), automatically shifts the reference dates forward relative to runtime so the demo competition remains active for testing.
+- `PORT`: Port on which the Express backend server listens (default: `5000`).
+- `MONGODB_URI`: Connection string for MongoDB (default: `mongodb://127.0.0.1:27017/feedants_competition`).
+- `CLIENT_ORIGIN`: Allowed origin for CORS (default: `http://localhost:8081`).
+- `DEMO_DATE_OFFSET_DAYS`: Defaults to `7` days in future so registration remains open by default during interactive testing. When set to `0` or another integer, shifts reference dates accordingly.
 
 ---
 
@@ -91,7 +102,7 @@ DEMO_DATE_OFFSET_DAYS=0
 - Node.js (v18 or higher recommended)
 - npm or yarn
 
-### 2. Backend Installation & Database Seeding
+### 2. Backend Installation & Server Launch
 ```bash
 cd server
 npm install
@@ -100,7 +111,12 @@ npm install
 npm run dev
 ```
 
-*Note: Database seeding occurs automatically during `npm run dev`. You can also manually run `npm run seed` if desired. If local MongoDB service (`127.0.0.1:27017`) is not running, the backend automatically launches `MongoMemoryReplSet` in memory for zero-config local development and transaction support.*
+*Note: Database seeding occurs automatically on startup when running `npm run dev`. You can also manually run `npm run seed` if desired. If local standalone MongoDB service (`127.0.0.1:27017`) is unavailable, the backend automatically launches `MongoMemoryReplSet` in memory for zero-config local development and transaction support.*
+
+#### Key Deterministic Demo Identifiers:
+- **Demo Competition ID:** `6ab8ffc731f29eaaf5047daa`
+- **Demo User ID:** `6ab8ffc731f29eaaf5047da8`
+- **Demo Judge ID:** `6ab8ffc731f29eaaf5047da7`
 
 ### 3. Frontend Installation & Execution
 ```bash
@@ -165,12 +181,12 @@ Base URL: `http://localhost:5000/api/v1`
         ]
       },
       "lifecycle": {
-        "state": "REGISTRATION_OPEN",
+        "state": "SUBMISSION_OPEN",
         "isRegistrationOpen": true,
-        "isSubmissionOpen": false,
+        "isSubmissionOpen": true,
         "isSoldOut": false,
-        "secondsUntilRegistrationCloses": 432000,
-        "serverTime": "2026-09-27T11:39:05.668Z"
+        "secondsUntilRegistrationCloses": 604745,
+        "serverTime": "2026-09-27T14:25:27.883Z"
       },
       "userState": {
         "isRegistered": false,
@@ -184,7 +200,7 @@ Base URL: `http://localhost:5000/api/v1`
   }
   ```
 
-### 3. Get Previous Winners
+### 3. Get Past Winners
 `GET /api/v1/competitions/:id/winners`
 - **Response `200 OK`:** Returns array of winner objects sorted by `rankPosition`.
 
@@ -198,8 +214,8 @@ Base URL: `http://localhost:5000/api/v1`
     "success": true,
     "message": "Registration successful",
     "data": {
-      "registrationId": "6ab8ffc...",
-      "competitionId": "6ab8ffc...",
+      "registrationId": "6ab9278a14effe40cc756db1",
+      "competitionId": "6ab8ffc731f29eaaf5047daa",
       "bookedSpots": 2,
       "remainingSpots": 18,
       "registrationStatus": "CONFIRMED"
@@ -227,7 +243,7 @@ Base URL: `http://localhost:5000/api/v1`
 
 ## 🔒 Concurrency & Data Consistency Strategy
 
-1. **Atomic Spot Reservation:** Spot incrementing uses `Competition.findOneAndUpdate` with conditional query `{ bookedSpots: { $lt: totalSpots } }` and `$inc: { bookedSpots: 1 }`. If capacity is exhausted, the query matches 0 documents and returns `null`, preventing overselling.
+1. **Atomic Spot Reservation:** Spot incrementing uses `Competition.findOneAndUpdate` with conditional query `{ bookedSpots: { $lt: totalSpots } }` and `$inc: { bookedSpots: 1 }`. If capacity is exhausted, the query matches 0 documents and returns `null`, preventing overselling even under high concurrent load.
 2. **ACID Transaction Isolation:** Reservation and `Registration` record creation run inside a MongoDB Session Transaction (`session.startTransaction()`).
 3. **Database Uniqueness Constraint:** A compound unique index `{ competitionId: 1, userId: 1 }` on `Registration` guarantees that even if parallel requests bypass pre-checks, MongoDB enforces uniqueness at the database level.
 4. **Transient Conflict Retries:** Implements an exponential backoff retry loop handling MongoDB `WriteConflict` errors under concurrent request spikes.
@@ -254,14 +270,26 @@ cd server
 npm test
 ```
 
-- Executed 21 test cases across 7 suites verifying GET APIs, registration errors, duplicate submission restrictions, transaction rollbacks, and **10 concurrent registration requests competing for 1 spot**.
+- **Result:** 21 tests passed, 0 failed, 0 skipped across 7 test suites verifying GET APIs, registration errors, duplicate submission restrictions, transaction rollbacks, and **10 concurrent registration requests competing for 1 spot**.
+
+### Run Backend Type Check & Build Verification
+```bash
+cd server
+npm run type-check
+npm run build
+```
+
+- **Result:** `tsc --noEmit` passed with 0 errors, `tsc` build generated clean `dist/` production bundle.
 
 ### Run Frontend State Unit Tests & Type Checks
 ```bash
 cd client
 npx tsc --noEmit
 npx tsx src/utils/ctaStateResolver.test.ts
+npx expo export
 ```
+
+- **Result:** `npx tsc --noEmit` passed with 0 errors, 6 CTA resolver assertions passed, `npx expo export` bundled successfully for Web, Android, and iOS.
 
 ---
 
@@ -271,6 +299,7 @@ npx tsx src/utils/ctaStateResolver.test.ts
 2. **Payment Mocking:** Payment tokens (`pay_mock_...`) simulate successful Razorpay transactions.
 3. **Derived Fields:** `remainingSpots` is computed dynamically (`totalSpots - bookedSpots`) rather than stored independently, avoiding dual sources of truth.
 4. **Offline Local DB Support:** Integrated `MongoMemoryReplSet` for zero-setup local testing with transaction support.
+5. **Deterministic Seeding:** Fixed ObjectIds ensure frontend config (`client/src/constants/config.ts`) seamlessly requests the seeded demo competition document without manual ID copying.
 
 ---
 
